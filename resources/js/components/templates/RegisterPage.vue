@@ -166,9 +166,9 @@
                             <input v-model="user.Agreement" type="checkbox" id="agreeCheckbox" class="form-checkbox h-4 w-4 text-indigo-600 transition duration-150 ease-in-out" />
                             <label  for="agreeCheckbox" class="ml-2 block text-sm italic">
                                 I agree to
-                                <a href="#" class="text-blue-500 hover:underline">Terms of Service</a>
+                                <a href="#" @click="TermsFnc()" class="text-blue-500 hover:underline">Terms of Service</a>
                                 and
-                                <a href="#" class="text-blue-500 hover:underline">Privacy Policy.</a>
+                                <a href="#" @click="PrivcyFnc()" class="text-blue-500 hover:underline">Privacy Policy.</a>
                             </label>
                         </div>
                         <div class="flex justify-between  ">
@@ -225,162 +225,183 @@
                     </div>
                 </div>
             </div>
+            <div v-if="termsDailog ==true ">
+                <Terms @CloseDialog="CloseTermsPrivacy"/>
+            </div>
+            <div v-if="privacyDialog==true">
+                <Privacy @CloseDialog="CloseTermsPrivacy"/>
+            </div>
     </div>
 </template>
 
 <script>
+import Privacy from './Privacy.vue';
+import Terms from './Terms.vue'
+
     export default {
-        data() {
-            return {
-                tab: 0,
-                years: [],
-                user:{
-                    LRN_no: null,
-                    SurName: null,
-                    Mi: null,
-                    FirstName: null,
-                    Suffix: null,
-                    Email:null,
-                    Password:null,
-                    PinCode:null,
-                    Path:null,
-                    Phone_No: null,
-                    Gender: null,
-                    Track:null,
-                    Section: null,
-                    Year: null,
-                    UserType:'User',
-                    Status:0,
-                    Agreement:false
-                },
-                confirmPassword:null,
-                tab1message:null,
-                tab2message:null,
-                showPassword:false,
-                loading:false,
-                showMITooltip: false,
-                showSuffixTooltip: false,
-                tracks:[],
-                sections:[]
+    data() {
+        return {
+            termsDailog:false,
+            privacyDialog:false,
+            tab: 1,
+            years: [],
+            user: {
+                LRN_no: null,
+                SurName: null,
+                Mi: null,
+                FirstName: null,
+                Suffix: null,
+                Email: null,
+                Password: null,
+                PinCode: null,
+                Path: null,
+                Phone_No: null,
+                Gender: null,
+                Track: null,
+                Section: null,
+                Year: null,
+                UserType: 'User',
+                Status: 0,
+                Agreement: false
+            },
+            confirmPassword: null,
+            tab1message: null,
+            tab2message: null,
+            showPassword: false,
+            loading: false,
+            showMITooltip: false,
+            showSuffixTooltip: false,
+            tracks: [],
+            sections: []
+        };
+    },
+    methods: {
+        PrivcyFnc(){
+            this.termsDailog=true
+        },
+        TermsFnc(){
+            this.privacyDialog=true
+        },
+        CloseTermsPrivacy(val){
+            this.termsDailog=val
+            this.privacyDialog=val
+
+        },
+        
+        getAllTrack() {
+            axios({
+                method: 'get',
+                url: '/getAllTrack'
+            }).then(res => {
+                this.tracks = res.data;
+            });
+        },
+        getAllSection() {
+            axios({
+                method: 'get',
+                url: '/getAllSection'
+            }).then(res => {
+                this.sections = res.data;
+            });
+        },
+        CloseDialog() {
+            this.tab = 0;
+            this.tab1message = null;
+            this.$emit('CloseRegister', false);
+        },
+        passwordTab() {
+            if (!this.user.LRN_no || !this.user.SurName || !this.user.FirstName ||
+                !this.user.Phone_No || !this.user.Gender || !this.user.Track ||
+                !this.user.Year || !this.user.Section) {
+                this.tab1message = 'Please Complete All fields!';
+                return false;
+            }
+            if (this.user.Phone_No.length != 11) {
+                this.tab1message = 'Mobile Number length must be 11!';
+                return false;
+            }
+            if (!this.user.Email.includes('@gmail.com') && !this.user.Email.includes('@yahoo.com')) {
+                this.tab1message = 'Check your Email Format!';
+                return false;
+            }
+            this.loading = true;
+            setTimeout(() => {
+                this.tab = 1;
+                this.loading = false;
+            }, 1500);
+        },
+        registerTab() {
+            this.loading = true;
+            if (!this.user.Password || !this.confirmPassword) {
+                this.tab2message = 'Please Complete All fields !';
+                this.loading = false;
+                return false;
+            }
+            if (this.user.Password != this.confirmPassword) {
+                this.tab2message = 'Password Not Match!';
+                this.loading = false;
+                return false;
+            }
+            setTimeout(() => {
+                this.user.Status = 0;
+                axios({
+                    method: 'post',
+                    url: 'api/insertUser',
+                    data: this.user
+                }).then(res => {
+                    this.tab = 2;
+                    this.loading = false;
+                }).catch(err => {
+                    alert(err.response.data.message);
+                    this.loading = false;
+                });
+            }, 2000);
+        },
+        getDateInfo() {
+            const currentYear = new Date().getFullYear();
+            const startYear = currentYear - 20; // Adjust the range as needed
+            for (let year = startYear; year <= currentYear; year++) {
+                this.years.push(year);
             }
         },
-        methods: {
-            getAllTrack() {
-                    axios({
-                        method:'get',
-                        url:'/getAllTrack'
-                    }).then(res=>{
-                            this.tracks=res.data
-                    })
-                },
-            getAllSection() {
-                axios({
-                    method:'get',
-                    url:'/getAllSection'
-                }).then(res=>{
-                    this.sections=res.data
-                })
-            },
-
-            CloseDialog() {
-                this.tab =0
-                this.tab1message=null
-                this.$emit('CloseRegister',false)
-            },
-            passwordTab(){
-                if(!this.user.LRN_no||!this.user.SurName||!this.user.FirstName||
-                !this.user.Phone_No||!this.user.Gender||!this.user.Track||
-                !this.user.Year||!this.user.Section){
-                    this.tab1message='Please Complete All fields!'
-                    return false
+        FindLrnNO() {
+            axios({
+                method: 'post',
+                url: '/getLrnRecord',
+                data: this.user
+            }).then(res => {
+                if (res.data.length > 0) {
+                    let obj = res.data[0];
+                    this.user = {
+                        LRN_no: obj.LRN_No,
+                        SurName: obj.SurName,
+                        Mi: obj.Mi,
+                        FirstName: obj.FirstName,
+                        Suffix: obj.Suffix,
+                        Gender: obj.Gender,
+                        Track: obj.Track,
+                        Section: obj.Section,
+                    };
                 }
-                if(this.user.Phone_No.length !=11 ){
-                    this.tab1message='Mobile Number length must be 11!'
-                    return false
-                }
-                if(!this.user.Email.includes('@gmail.com') && !this.user.Email.includes('@yahoo.com')  ){
-                    this.tab1message='Check your Email Format!'
-                    return false
-                }
-                this.loading=true
-                setTimeout(() => {
-                    this.tab = 1
-                    this.loading=false
-                }, 1500);
-            },
-            registerTab(){
-                this.loading = true
-                if(!this.user.Password || !this.confirmPassword){
-                    this.tab2message ='Please Complete All fields !'
-                    this.loading = false
-                    return false
-                }
-                if(this.user.Password != this.confirmPassword){
-                    this.tab2message ='Password Not Match!'
-                    this.loading = false
-                    return false
-                }
-                setTimeout(() => {
-                    this.user.Status=0
-                    axios({
-                        method:'post',
-                        url:'api/insertUser',
-                        data:this.user
-                    }).then(res=>{
-                        this.tab = 2
-                        this.loading=false
-                    }).catch(err=>{
-                        alert(err.response.data.message)
-                        this.loading=false
-                    })
-                }, 2000);
-            },
-            getDateInfo(){
-                const currentYear = new Date().getFullYear();
-                const startYear = currentYear - 20; // Adjust the range as needed
-                for (let year = startYear; year <= currentYear; year++) {
-                    this.years.push(year);
-                }
-            },
-            FindLrnNO(){
-                    axios({
-                        method:'post',
-                        url:'/getLrnRecord',
-                        data:this.user
-                    }).then(res=>{
-                        if(res.data.length >0){
-                            let obj=res.data[0]
-                            this.user={
-                                LRN_no: obj.LRN_No,
-                                SurName: obj.SurName,
-                                Mi: obj.Mi,
-                                FirstName: obj.FirstName,
-                                Suffix: obj.Suffix,
-                                Gender: obj.Gender,
-                                Track:obj.Track,
-                                Section: obj.Section,
-                            }
-                        }
-
-                    }).catch(err=>{
-                        alert(err.response.data.message)
-                        this.loading=false
-                    })
-            },
-            handlePhoneInput() {
-                this.user.Phone_No = this.user.Phone_No.replace(/[^0-9]/g, '');
-                if (this.user.Phone_No.length > 11) {
-                    this.user.Phone_No = this.user.Phone_No.slice(0, 11);
-                }
-            },
-
+            }).catch(err => {
+                alert(err.response.data.message);
+                this.loading = false;
+            });
         },
-        mounted () {
-            this.getAllSection()
-            this.getAllTrack()
-            this.getDateInfo()
-        }
-    }
+        handlePhoneInput() {
+            this.user.Phone_No = this.user.Phone_No.replace(/[^0-9]/g, '');
+            if (this.user.Phone_No.length > 11) {
+                this.user.Phone_No = this.user.Phone_No.slice(0, 11);
+            }
+        },
+    },
+    mounted() {
+        this.getAllSection();
+        this.getAllTrack();
+        this.getDateInfo();
+    },
+    components: { Terms, Privacy }
+}
 </script>
 
 <style lang="scss" scoped>

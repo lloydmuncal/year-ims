@@ -28,7 +28,6 @@
                 </svg>
             </button>
         </div>
-        {{ currentPage }}
         <div class="flex justify-center items-center  "  >
         <div class="w-fit overflow-x-auto ">
             <!-- border-2 border-gray-500 bg-gray-300 -->
